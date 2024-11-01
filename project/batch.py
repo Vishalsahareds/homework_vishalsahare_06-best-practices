@@ -1,7 +1,4 @@
 # Databricks notebook source
-import warnings
-warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
-
 #!/usr/bin/env python
 # coding: utf-8
 
