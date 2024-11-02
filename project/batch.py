@@ -1,20 +1,26 @@
+import os
 import pandas as pd
 
+S3_ENDPOINT_URL = "http://localhost:4566"
+options = {
+    'client_kwargs': {
+        'endpoint_url': S3_ENDPOINT_URL
+    }
+}
+
 def read_data(file_path):
-    df = pd.read_parquet(file_path)
+    df = pd.read_parquet(file_path, storage_options=options)
     return df
 
-def prepare_data(df):
-    # Ensure the correct data types
-    df['PULocationID'] = df['PULocationID'].astype('Int64')
-    df['DOLocationID'] = df['DOLocationID'].astype('Int64')
-    # Apply transformations to the dataframe
-    df['trip_duration'] = (df['tpep_dropoff_datetime'] - df['tpep_pickup_datetime']).dt.total_seconds() / 60
-    df = df.dropna(subset=['PULocationID', 'DOLocationID'])
-    return df
+def save_data(df, file_path):
+    df.to_parquet(file_path, engine='pyarrow', compression=None, index=False, storage_options=options)
 
 if __name__ == "__main__":
-    file_path = 'input_yellow_tripdata_2023-03.parquet'
-    df = read_data(file_path)
-    transformed_df = prepare_data(df)
-    print(transformed_df)
+    year = 2023
+    month = 3
+    input_file = f"s3://nyc-duration/in/{year:04d}-{month:02d}.parquet"
+    output_file = f"s3://nyc-duration/out/{year:04d}-{month:02d}.parquet"
+
+    df = read_data(input_file)
+    # Perform some operations on df if needed
+    save_data(df, output_file)

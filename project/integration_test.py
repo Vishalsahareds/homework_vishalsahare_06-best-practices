@@ -1,0 +1,55 @@
+import os
+import pandas as pd
+
+# Set up Localstack S3 endpoint
+S3_ENDPOINT_URL = "http://localhost:4566"
+options = {
+    'client_kwargs': {
+        'endpoint_url': S3_ENDPOINT_URL
+    }
+}
+
+def get_input_path(year, month):
+    default_input_pattern = 's3://nyc-duration/in/{year:04d}-{month:02d}.parquet'
+    input_pattern = os.getenv('INPUT_FILE_PATTERN', default_input_pattern)
+    return input_pattern.format(year=year, month=month)
+
+def get_output_path(year, month):
+    default_output_pattern = 's3://nyc-duration/out/{year:04d}-{month:02d}.parquet'
+    output_pattern = os.getenv('OUTPUT_FILE_PATTERN', default_output_pattern)
+    return output_pattern.format(year=year, month=month)
+
+def save_data(df, file_path):
+    options = {
+        'client_kwargs': {
+            'endpoint_url': S3_ENDPOINT_URL
+        }
+    }
+    df.to_parquet(file_path, engine='pyarrow', compression=None, index=False, storage_options=options)
+
+def main(year, month):
+    input_file = get_input_path(year, month)
+    output_file = get_output_path(year, month)
+
+    # Create a dataframe (pretend this is data for January 2023)
+    data = {
+        'column1': [1, 2, 3],
+        'column2': ['a', 'b', 'c']
+    }
+    df_input = pd.DataFrame(data)
+
+    # Save dataframe to S3
+    save_data(df_input, input_file)
+
+    print("Dataframe saved to S3.")
+
+    # Run the batch.py script
+    os.system(f"python batch.py {year} {month}")
+
+    # Verify the saved data
+    df_output = pd.read_parquet(output_file, storage_options=options)
+    print("Data read from S3:")
+    print(df_output)
+
+if __name__ == "__main__":
+    main(2023, 3)
