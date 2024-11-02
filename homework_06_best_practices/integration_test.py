@@ -1,3 +1,4 @@
+# Databricks notebook source
 import os
 import pandas as pd
 
@@ -30,17 +31,8 @@ def main(year, month):
     input_file = get_input_path(year, month)
     output_file = get_output_path(year, month)
 
-    # Create a dataframe (pretend this is data for January 2023)
-    # data = {
-    #     'column1': [1, 2, 3],
-    #     'column2': ['a', 'b', 'c'],
-    #     'predicted_duration': [13.08, 36.28, 69.28]
-    # }
-
-    data = {
-        'column2': ['b'],
-        'predicted_duration': [36.28]
-    }
+    # Read data from S3
+    df_input = read_data(input_file)
 
     df_input = pd.DataFrame(data)
 
