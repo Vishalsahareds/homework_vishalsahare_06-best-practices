@@ -1,13 +1,15 @@
-# Databricks notebook source
-#!/usr/bin/env python
-# coding: utf-8
-
 import sys
 import pickle
 import pandas as pd
+from datetime import datetime
 
-def read_data(filename, categorical):
+def read_data(filename):
     df = pd.read_parquet(filename)
+    return df
+
+def prepare_data(df, categorical):
+    df['tpep_pickup_datetime'] = pd.to_datetime(df['tpep_pickup_datetime'])
+    df['tpep_dropoff_datetime'] = pd.to_datetime(df['tpep_dropoff_datetime'])
     
     df['duration'] = df.tpep_dropoff_datetime - df.tpep_pickup_datetime
     df['duration'] = df.duration.dt.total_seconds() / 60
@@ -26,7 +28,8 @@ def main(year, month):
         dv, lr = pickle.load(f_in)
 
     categorical = ['PULocationID', 'DOLocationID']
-    df = read_data(input_file, categorical)
+    df = read_data(input_file)
+    df = prepare_data(df, categorical)
     df['ride_id'] = f'{year:04d}/{month:02d}_' + df.index.astype('str')
 
     dicts = df[categorical].to_dict(orient='records')

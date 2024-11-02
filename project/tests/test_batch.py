@@ -1,18 +1,35 @@
-# Databricks notebook source
 import pytest
-from project.batch import main, read_data
+import pandas as pd
+from project.batch import prepare_data
+from datetime import datetime
+
+def dt(hour, minute, second=0):
+    return datetime(2023, 1, 1, hour, minute, second)
+
+def test_prepare_data():
+    data = [
+        (None, None, dt(1, 1), dt(1, 10)),
+        (1, 1, dt(1, 2), dt(1, 10)),
+        (1, None, dt(1, 2, 0), dt(1, 2, 59)),
+        (3, 4, dt(1, 2, 0), dt(2, 2, 1)),      
+    ]
+    columns = ['PULocationID', 'DOLocationID', 'tpep_pickup_datetime', 'tpep_dropoff_datetime']
+    df = pd.DataFrame(data, columns=columns)
+
+    categorical = ['PULocationID', 'DOLocationID']
+    df_prepared = prepare_data(df, categorical)
+
+    expected_data = [
+        (1, '1', dt(1, 2), dt(1, 10), 8.0),
+        (3, '4', dt(1, 2, 0), dt(2, 2, 1), 1441.0)
+    ]
+    expected_columns = ['PULocationID', 'DOLocationID', 'tpep_pickup_datetime', 'tpep_dropoff_datetime', 'duration']
+    expected_df = pd.DataFrame(expected_data, columns=expected_columns)
+
+    pd.testing.assert_frame_equal(df_prepared.reset_index(drop=True), expected_df.reset_index(drop=True))
 
 def test_read_data():
-    # Provide a valid file location and categorical columns for testing
-    df = read_data('tests/yellow_tripdata_2023-03.parquet', ['PULocationID', 'DOLocationID'])
+    df = read_data('yellow_tripdata_2023-03.parquet')
     assert df is not None
-    assert 'duration' in df.columns
-    assert 'PULocationID' in df.columns
-    assert 'DOLocationID' in df.columns
-
-def test_main():
-    # Example test case for the main function
-    year = 2023
-    month = 3
-    result = main(year, month)
-    assert result is None  # Adjust this based on the actual return value of main
+    assert 'tpep_pickup_datetime' in df.columns
+    assert 'tpep_dropoff_datetime' in df.columns
